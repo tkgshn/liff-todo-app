@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-lifftodoapp-dev-201755-authRole",
+      "UnauthRoleArn": "arn:aws:iam::376614337026:role/amplify-lifftodoapp-dev-201755-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::376614337026:role/amplify-lifftodoapp-dev-201755-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-lifftodoapp-dev-201755-deployment",
+      "UnauthRoleName": "amplify-lifftodoapp-dev-201755-unauthRole",
+      "StackName": "amplify-lifftodoapp-dev-201755",
+      "StackId": "arn:aws:cloudformation:us-east-1:376614337026:stack/amplify-lifftodoapp-dev-201755/8c59b860-ad93-11eb-ab69-12be25e2835f",
+      "AmplifyAppId": "d18f2b9ft2f9uw"
+    },
+    "categories": {
+      "auth": {
+        "lifftodoappf2e4076b": {}
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "auth": {
+    "lifftodoappf2e4076b": {
+      "service": "Cognito",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "customAuth": false
+    }
+  },
+  "storage": {
+    "s31e67269f": {
+      "service": "S3",
+      "providerPlugin": "awscloudformation"
+    }
+  }
+}
