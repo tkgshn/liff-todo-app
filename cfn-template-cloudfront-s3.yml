@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: S3 and CloudFront (through OAI)
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "Stage"
+        Parameters:
+          - Stage
+    ParameterLabels:
+      Stage:
+        default: "dev"
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------#
+Parameters:
+  Project:
+    Type: String
+    Default: "liff-todo-app"
+  Stage:
+    Type: String
+    Default: "dev"
+    AllowedValues:
+      - dev
+      - stg
+      - prd
+  # Enable belows line and related setting when using custom domain name and Custom Certificate
+  # Support Cname and Certificate on ACM only
+  # CustomDomainName:
+  #   Type: String
+  #   Default: ""
+  # CFSSLCertificateId:
+  #   Type: String
+# Conditions:
+Resources:
+  # ------------------------------------------------------------#
+  #  S3 Bucket
+  # ------------------------------------------------------------#
+  # Bucket
+  Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Sub "${Stage}-${Project}-${AWS::AccountId}"
+      Tags:
+        - Key: Project
+          Value: !Ref Project
+  LoggingBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Sub "cflogs.${Stage}-${Project}-${AWS::AccountId}"
+      Tags:
+        - Key: Project
+          Value: !Ref Project
+  CloudFrontOriginAccessIdentity:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "access-identity-${Bucket}"
+  BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+          - Action: "s3:GetObject"
+            Effect: Allow
+            Resource: !Sub "arn:aws:s3:::${Bucket}/*"
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+  # ------------------------------------------------------------#
+  #  CloudFront
+  # ------------------------------------------------------------#
+  CloudFrontDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        PriceClass: PriceClass_All
+        # Uncomment the belows line when using custom domain Cname
+        # Aliases:
+        #   - CustomDomainName
+        Origins:
+          - DomainName: !GetAtt Bucket.RegionalDomainName
+            Id: !Sub "S3origin-${Bucket}"
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub "S3origin-${Bucket}"
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          DefaultTTL: 3600
+          MaxTTL: 86400
+          MinTTL: 60
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+        ViewerCertificate:
+          # Uncomment those below lines to attach custom Certification on ACM
+          # SslSupportMethod: sni-only
+          # MinimumProtocolVersion: TLSv1.1_2016
+          CloudFrontDefaultCertificate: true
+          # AcmCertificateArn: !Sub "arn:aws:acm:us-east-1:${AWS::AccountId}:certificate/${CFSSLCertificateId}"
+        HttpVersion: http2
+        Logging:
+          Bucket: !GetAtt LoggingBucket.RegionalDomainName
+          IncludeCookies: yes
+          Prefix: !Ref Project
+        Enabled: true
+Outputs:
+  #Bucket:
+  Bucket:
+    Value: !Ref Bucket
+  #DistributionID
+  DistributionID:
+    Value: !Ref CloudFrontDistribution
+  #DmainName
+  DomainName:
+    Value: !GetAtt CloudFrontDistribution.DomainName
